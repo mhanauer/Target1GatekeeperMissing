@@ -660,10 +660,10 @@ mean.sd.out= mi.meld(mean.out, sd.out)
 mean.sd.out
 
 ```
+#####################
+Model1 
+#####################
 Now run model 1
-
-This seems to be the best way to get the polynominal contrast: https://www.r-bloggers.com/fitting-polynomial-regression-in-r/
-
 
 ```{r}
 output = list()
@@ -948,54 +948,6 @@ round(results,3)
 ```
 Now get contrats
 ```{r}
-
-
-output = list()
-outputReg = list()
-coef_output =  NULL
-se_output = NULL
-rSquared = NULL
-
-for(i in 1:m){
-  output[[i]] = lmer(Sec1Total ~ factor(Treatment)*Time +  Edu + Gender + Age + Race + (1 | ID), data  = datAnalysisAll[[i]])
-  outputReg[[i]] = output[[i]]
-  rSquared[[i]] = r.squaredGLMM(output[[i]])
-  output[[i]] = summary(output[[i]])
-  coef_output[[i]] = output[[i]]$coefficients[,1]
-  se_output[[i]] = output[[i]]$coefficients[,2]
-}
-coef_output = data.frame(coef_output)
-coef_output
-quickTrans = function(x){
-  x = data.frame(x)
-  x = t(x)
-  x = data.frame(x)
-}
-coef_output = quickTrans(coef_output)
-coef_output
-se_output = quickTrans(se_output)
-
-# Figure out the degrees of freedom 
-
-#coefsAll = mi.meld(q = coef_output, se = se_output)
-
-meldAllT_stat = function(x,y){
-  coefsAll = mi.meld(q = x, se = y)
-  coefs1 = t(data.frame(coefsAll$q.mi))
-  ses1 = t(data.frame(coefsAll$se.mi))
-  z_stat = coefs1/ses1
-  p = 2*pnorm(-abs(z_stat))
-  return(data.frame(coefs1, ses1, z_stat, p))
-}
-
-results = meldAllT_stat(coef_output, se_output); results
-round(results,3) 
-
-
-# just practice with one data set
-library(multcomp)
-output1 = output[[1]]
-output1
 K1 = matrix(c(0,1,-1,0,0,0,0,0,0,0),1)
 K2 = matrix(c(0,1,-1,0,0,0,0,0,1,-1),1)
 K = K1-K2; K
@@ -1061,9 +1013,9 @@ results = meldAllT_stat(coef_output, se_output); results
 round(results,3) 
 
 ```
-Model 1 contrast effects (do this later)
+Model 2 contrast effects (do this later)
 
-Model 1 model comparision
+Model 2 model comparision
 First develop null models
 Then compare the no poly term with the poly term
 
@@ -1119,7 +1071,7 @@ Now moderator model
 ```{r}
 modGraph = NULL
 for(i in 1:m){
-  modGraph[[i]] = cat_plot(model = outputReg[[i]], pred = "Time", modx = "Treatment", cluster = "ID", y.label = "Section 2 Total Score", data = datAnalysisAllComplete[[i]])
+  modGraph[[i]] = cat_plot(model = outputReg[[i]], pred = "Time", modx = "Treatment", cluster = "ID", y.label = "Section 2 Total Score", geom = "line", interval  = FALSE , data = datAnalysisAllComplete[[i]])
 }
 modGraph
 
@@ -1294,7 +1246,8 @@ round(results,3)
 ```
 Now get contrats
 ```{r}
-K = matrix(c(rep(0,11), 1,-1),1)
+K = matrix(c(rep(0,11), -1,1),1)
+summary(outputReg[[1]])
 
 t = NULL
 for(i in 1:m){
@@ -1895,4 +1848,3 @@ t
 # No way to systematically grab the standard errors so just ballpark.  If significant maybe do something else.
 
 ```
-
