@@ -1,12 +1,16 @@
 ---
-title: "TLC Data Analysis"
-output: ''
+title: "Psychometrics Gatekeeper Prelim Results"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Library the packages that you need
+################
+Data cleaning
+################
 ```{r}
 library(foreign)
 library(nnet)
@@ -41,43 +45,39 @@ library(MissMech)
 library(robustlmm)
 library(jtools)
 library(lmtest)
-#library(lmerTest)
+library(lmerTest)
 library(MuMIn)
 library(HLMdiag)
 library(Hmisc)
 library(stargazer)
-```
 
-
-Ok so I need to transpose the data.  Use row.names = NULL forces numbering, so that will be used when we transpose it
-
-Then grab the variables that we want.  We want the id, treatment, section 1, sections 1 through 4 and then demographics
-
-Then we are renaming every variable.  
-```{r}
-#setwd("P:/Evaluation/TN Lives Count_Writing/3_Target1_SUICClinicalTrainingComparison/3_Data & Analyses")
-#datPre = read.csv("Pre.csv", header = FALSE, row.names = NULL)
+setwd("P:/Evaluation/TN Lives Count_Writing/3_Target1_SUICClinicalTrainingComparison/3_Data & Analyses")
+datPre = read.csv("Pre.csv", header = FALSE, row.names = NULL)
 
 datPre = t(datPre)
 write.csv(datPre, "datPre.csv", row.names = FALSE)
 datPre = read.csv("datPre.csv", header = TRUE)
 head(datPre)
+dim(datPre)
 
-datPre = datPre[,c(1, 3, 7:18, 21:35, 38:45, 49:72, 78:80, 83, 85)]
+datPre = datPre[,c(1, 3, 7:18, 21:35, 38:45, 49:72, 78:80, 83, 85, 94)]
 datPre = data.frame(datPre)
 head(datPre)
-colnames(datPre) = c("ID", "Treatment", "Sec1Qa", "Sec1Qb", "Sec1Qc", "Sec1Qd", "Sec1Qe", "Sec1Qf", "Sec1Qg", "Sec1Qh", "Sec1Qi", "Sec1Qj", "Sec1Qk", "Sec1Ql", "Sec2Qa", "Sec2Qb", "Sec2Qc", "Sec2Qd", "Sec2Qe", "Sec2Qf", "Sec2Qg",  "Sec2Qh", "Sec2Qi", "Sec2Qj", "Sec2Qk", "Sec2Ql", "Sec2Qm", "Sec2Qn", "Sec2Qo", "Sec3Qa", "Sec3Qb", "Sec3Qc", "Sec3Qd", "Sec3Qe", "Sec3Qf", "Sec3Qg", "Sec3Qh", "Sec4QaA", "Sec4QaB", "Sec4QbA", "Sec4QbB", "Sec4QcA", "Sec4QcB", "Sec4QdA", "Sec4QdB", "Sec4QeA", "Sec4QeB", "Sec4QfA","Sec4QfB", "Sec4QgA", "Sec4QgB", "Sec4QhA", "Sec4QhB", "Sec4QiA", "Sec4QiB", "Sec4QjA", "Sec4QjB", "Sec4QkA", "Sec4QkB", "Sec4QlA", "Sec4QlB","Age", "Gender", "Eth", "Race", "Edu")
+
+colnames(datPre) = c("ID", "Treatment", "Sec1Qa", "Sec1Qb", "Sec1Qc", "Sec1Qd", "Sec1Qe", "Sec1Qf", "Sec1Qg", "Sec1Qh", "Sec1Qi", "Sec1Qj", "Sec1Qk", "Sec1Ql", "Sec2Qa", "Sec2Qb", "Sec2Qc", "Sec2Qd", "Sec2Qe", "Sec2Qf", "Sec2Qg",  "Sec2Qh", "Sec2Qi", "Sec2Qj", "Sec2Qk", "Sec2Ql", "Sec2Qm", "Sec2Qn", "Sec2Qo", "Sec3Qa", "Sec3Qb", "Sec3Qc", "Sec3Qd", "Sec3Qe", "Sec3Qf", "Sec3Qg", "Sec3Qh", "Sec4QaA", "Sec4QaB", "Sec4QbA", "Sec4QbB", "Sec4QcA", "Sec4QcB", "Sec4QdA", "Sec4QdB", "Sec4QeA", "Sec4QeB", "Sec4QfA","Sec4QfB", "Sec4QgA", "Sec4QgB", "Sec4QhA", "Sec4QhB", "Sec4QiA", "Sec4QiB", "Sec4QjA", "Sec4QjB", "Sec4QkA", "Sec4QkB", "Sec4QlA", "Sec4QlB","Age", "Gender", "Eth", "Race", "Edu", "Clinical_Staff")
 head(datPre)
 ### Get rif of first row once you figure out which variables to keep
 datPre = datPre[-1,]
 datPre = data.frame(datPre)
 head(datPre)
 
-```
-Do the same as the pre where we transpose the data find the variables that correspdond to ID, treatment, and all four sections.  No demographic on post, so we need to merge the data on ID.  Variables are lined up with the variable above for naming
-```{r}
-#setwd("P:/Evaluation/TN Lives Count_Writing/3_Target1_SUICClinicalTrainingComparison/3_Data & Analyses")
-#datPost = read.csv("Post.csv", header = FALSE, row.names = NULL)
+#Only retain clincial staff 1
+datPre = subset(datPre, Clinical_Staff == 1)
+head(datPre)
+dim(datPre)
+
+setwd("P:/Evaluation/TN Lives Count_Writing/3_Target1_SUICClinicalTrainingComparison/3_Data & Analyses")
+datPost = read.csv("Post.csv", header = FALSE, row.names = NULL)
 
 datPost = t(datPost)
 write.csv(datPost, "datPost.csv", row.names = FALSE)
@@ -97,26 +97,6 @@ datPost = datPost[-1,]
 datPost$Treatment = NULL
 datPost = data.frame(datPost)
 
-```
-Now try to get the three-month follow up data
-
-Grab all of the data that you need
-
-```{r}
-head(dat3month)
-dat3month = dat3month[c(7, 11:22, 23:69)]
-dim(datPost)
-head(datPost)
-
-# Now rename everything 
-colnames(dat3month) = c("ID", "Sec1Qa", "Sec1Qb", "Sec1Qc", "Sec1Qd", "Sec1Qe", "Sec1Qf", "Sec1Qg", "Sec1Qh", "Sec1Qi", "Sec1Qj", "Sec1Qk", "Sec1Ql", "Sec2Qa", "Sec2Qb", "Sec2Qc", "Sec2Qd", "Sec2Qe", "Sec2Qf", "Sec2Qg",  "Sec2Qh", "Sec2Qi", "Sec2Qj", "Sec2Qk", "Sec2Ql", "Sec2Qm", "Sec2Qn", "Sec2Qo", "Sec3Qa", "Sec3Qb", "Sec3Qc", "Sec3Qd", "Sec3Qe", "Sec3Qf", "Sec3Qg", "Sec3Qh", "Sec4QaA", "Sec4QaB", "Sec4QbA", "Sec4QbB", "Sec4QcA", "Sec4QcB", "Sec4QdA", "Sec4QdB", "Sec4QeA", "Sec4QeB", "Sec4QfA","Sec4QfB", "Sec4QgA", "Sec4QgB", "Sec4QhA", "Sec4QhB", "Sec4QiA", "Sec4QiB", "Sec4QjA", "Sec4QjB", "Sec4QkA", "Sec4QkB", "Sec4QlA", "Sec4QlB")
-
-```
-
-Here merge all the data sets
-Just keep all data across and use sort = TRUE to keep id values and order them
-Then use reshape to turn into long format
-```{r}
 dim(datPre)
 dim(datPost)
 
@@ -126,10 +106,23 @@ datPre = read.csv("datPre.csv", header = TRUE)
 
 write.csv(datPost, "datPost.csv", row.names = FALSE)
 datPost = read.csv("datPost.csv", header = TRUE)
-datPrePost = merge(datPre, datPost, by = "ID",  all = TRUE, sort = TRUE)
+
+#Should not have ID one, because they are the wrong code and not in datPre
+datPrePost = merge(datPre, datPost, by = "ID",  all.x = TRUE, sort = TRUE)
 
 
-datPrePost3month = merge(datPrePost, dat3month, by = "ID", all = TRUE, sort = TRUE)
+
+dat3month = read.csv("3month.csv", header  = TRUE)
+head(dat3month)
+dat3month = dat3month[c(7, 11:22, 23:69)]
+dim(datPost)
+head(datPost)
+
+# Now rename everything 
+colnames(dat3month) = c("ID", "Sec1Qa", "Sec1Qb", "Sec1Qc", "Sec1Qd", "Sec1Qe", "Sec1Qf", "Sec1Qg", "Sec1Qh", "Sec1Qi", "Sec1Qj", "Sec1Qk", "Sec1Ql", "Sec2Qa", "Sec2Qb", "Sec2Qc", "Sec2Qd", "Sec2Qe", "Sec2Qf", "Sec2Qg",  "Sec2Qh", "Sec2Qi", "Sec2Qj", "Sec2Qk", "Sec2Ql", "Sec2Qm", "Sec2Qn", "Sec2Qo", "Sec3Qa", "Sec3Qb", "Sec3Qc", "Sec3Qd", "Sec3Qe", "Sec3Qf", "Sec3Qg", "Sec3Qh", "Sec4QaA", "Sec4QaB", "Sec4QbA", "Sec4QbB", "Sec4QcA", "Sec4QcB", "Sec4QdA", "Sec4QdB", "Sec4QeA", "Sec4QeB", "Sec4QfA","Sec4QfB", "Sec4QgA", "Sec4QgB", "Sec4QhA", "Sec4QhB", "Sec4QiA", "Sec4QiB", "Sec4QjA", "Sec4QjB", "Sec4QkA", "Sec4QkB", "Sec4QlA", "Sec4QlB")
+
+
+datPrePost3month = merge(datPrePost, dat3month, by = "ID", all.x = TRUE, sort = TRUE)
 
 head(datPrePost3month)
 
@@ -141,15 +134,7 @@ datPrePost3month = reshape(datPrePost3month, varying  = list(c("Sec1Qa.x", "Sec1
 
 head(datPrePost3month)
 
-```
 
-
-
-Look at descirptives, then do basic psychometrics
-
-Werid changes 1's to 2's and 0's to 1's, but it is happening and just add another ifelse statement to fix it.
-
-```{r, include=FALSE}
 write.csv(datPrePost3month, "datPrePost3month.csv", row.names = FALSE)
 datPrePost3month = read.csv("datPrePost3month.csv", header = TRUE)
 
@@ -232,11 +217,7 @@ datPrePost3month$Sec2Qh.x = ifelse(datPrePost3month$Sec2Qh.x == 56, NA, datPrePo
 describe.factor(datPrePost3month$Sec2Qh.x)
 
 summary(datPrePost3month)
-```
-Need the deviation from each measure with the expert score.  
 
-Need to do this for every pair.  Rename each var with
-```{r}
 summary(datPrePost3month)
 
 head(datPrePost3month)
@@ -278,10 +259,9 @@ datPrePost3month$Sec4QkB.x =  datPrePost3month$Sec4QkB.x-2.43
 datPrePost3month$Sec4QlA.x =  datPrePost3month$Sec4QlA.x-2.00 
 datPrePost3month$Sec4QlB.x =  datPrePost3month$Sec4QlB.x-3.00 
 
-```
-Create data sets for psychometrics
-```{r}
-datPrePost3monthSec1 = datPrePost3month[,c(8,9:20)]
+head(datPrePost3month)
+
+datPrePost3monthSec1 = datPrePost3month[,c(9,10:21)]
 head(datPrePost3monthSec1)
 datPrePost3monthSec1Base = subset(datPrePost3monthSec1, time == 0)
 describe.factor(datPrePost3monthSec1Base$time)
@@ -292,7 +272,7 @@ write.csv(datPrePost3monthSec1Base, "datPrePost3monthSec1Base.csv", row.names = 
 datPrePost3monthSec1Base = read.csv("datPrePost3monthSec1Base.csv", header = TRUE)
 
 head(datPrePost3month)
-datPrePost3monthSec2 = datPrePost3month[,c(8, 21:35)]
+datPrePost3monthSec2 = datPrePost3month[,c(9, 22:36)]
 head(datPrePost3monthSec2)
 
 
@@ -300,13 +280,15 @@ datPrePost3monthSec2Base = subset(datPrePost3monthSec2, time == 0)
 describe.factor(datPrePost3monthSec2Base$time)
 datPrePost3monthSec2Base$time = NULL
 
+head(datPrePost3monthSec2Base)
+
 datPrePost3monthSec2Base = data.frame(datPrePost3monthSec2Base)
 write.csv(datPrePost3monthSec2Base, "datPrePost3monthSec2Base.csv", row.names = FALSE)
 datPrePost3monthSec2Base = read.csv("datPrePost3monthSec2Base.csv", header = TRUE)
 
 
 head(datPrePost3month)
-datPrePost3monthSec3 = datPrePost3month[,c(8, 36:43)]
+datPrePost3monthSec3 = datPrePost3month[,c(9, 37:44)]
 ### Need to get reverse scoring for A,C,E,G
 head(datPrePost3monthSec3)
 summary(datPrePost3monthSec3)
@@ -333,10 +315,10 @@ datPrePost3monthSec3Base$time = NULL
 datPrePost3monthSec3Base = data.frame(datPrePost3monthSec3Base)
 write.csv(datPrePost3monthSec3Base, "datPrePost3monthSec3Base.csv", row.names = FALSE)
 datPrePost3monthSec3Base = read.csv("datPrePost3monthSec3Base.csv", header = TRUE)
-
+head(datPrePost3monthSec3Base)
 
 head(datPrePost3month)
-datPrePost3monthSec4 = datPrePost3month[,c(8, 44:67)]
+datPrePost3monthSec4 = datPrePost3month[,c(9, 45:68)]
 head(datPrePost3monthSec4)
 
 datPrePost3monthSec4Base = subset(datPrePost3monthSec4, time == 0)
@@ -345,8 +327,7 @@ datPrePost3monthSec4Base$time = NULL
 
 datPrePost3monthSec4Base = data.frame(datPrePost3monthSec4Base)
 write.csv(datPrePost3monthSec4Base, "datPrePost3monthSec4Base.csv", row.names = FALSE)
-datPrePost3monthSec4Base = read.csv("datPrePost3monthSec4Base.csv", header = TRUE)
-```
+datPr
 
 
 Now try to get the psychometrics.  Just try reliabilty for the first one
